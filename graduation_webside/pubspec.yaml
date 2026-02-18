@@ -60,9 +60,11 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  # Image assets for background and icons.
+  # Image assets for background, logo, and icons.
   assets:
     - image/asset/image/loging_bacground.png
+    - image/asset/image/image2.jpeg
+    - image/asset/image/image1.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

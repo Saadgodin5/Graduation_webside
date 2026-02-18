@@ -1,9 +1,10 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../dashboard/dashboard_page.dart';
 
 /// Email / password login and registration screen using Supabase auth.
-/// Also offers a temporary "preview dashboard" button for UI development.
+/// AstroBot AI Assistant style: dark tech background, centered form.
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -12,21 +13,16 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  // Controllers to read the text from the email & password fields.
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  // Whether a network request is in progress (used to disable buttons + show spinner).
   bool _isLoading = false;
-  // When true, the form works in "sign up" mode instead of "log in".
   bool _isRegister = false;
+  bool _obscurePassword = true;
 
-  // Form key so we can run validation on all fields together.
   final _formKey = GlobalKey<FormState>();
 
-  // Shortcut to the shared Supabase client instance.
   SupabaseClient get _client => Supabase.instance.client;
 
-  /// Helper to show an error message at the bottom of the screen.
   Future<void> _showError(String message) async {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -34,16 +30,10 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  /// Handles both login and registration depending on `_isRegister`.
-  /// - Validates the form
-  /// - Calls Supabase
-  /// - Shows errors when something goes wrong
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
       final email = _emailController.text.trim();
@@ -60,9 +50,7 @@ class _LoginPageState extends State<LoginPage> {
               'id': res.user!.id,
               'email': email,
             });
-          } catch (_) {
-            // Profile may already exist or table schema differs; auth still succeeded
-          }
+          } catch (_) {}
         } else {
           await _showError('Check your email to confirm your account.');
         }
@@ -77,13 +65,12 @@ class _LoginPageState extends State<LoginPage> {
     } catch (e) {
       await _showError('Unexpected error: $e');
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
+
+  static const Color _darkBg = Color(0xFF0A0E21);
+  static const Color _accentBlue = Color(0xFF2196F3);
 
   @override
   Widget build(BuildContext context) {
@@ -91,219 +78,245 @@ class _LoginPageState extends State<LoginPage> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Background image for the login screen.
-          // `BoxFit.contain` keeps the whole image visible without cropping.
-          Image.asset(
-            'image/asset/image/loging_bacground.png',
-            fit: BoxFit.contain,
-            alignment: Alignment.center,
+          // Dark blue background
+          Container(color: _darkBg),
+          // Circuit / network lines and dots
+          CustomPaint(
+            painter: _CircuitBackgroundPainter(),
+            size: Size.infinite,
           ),
-          Container(
-            color: Colors.black.withOpacity(0.35),
-          ),
-          Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.18),
-                  borderRadius: BorderRadius.circular(36),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.4),
-                    width: 1.0,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.25),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            _isRegister ? 'CREATE ACCOUNT' : 'LOGIN',
-                            style: const TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              letterSpacing: 1.2,
-                            ),
+          // Centered content
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Robot icon
+                        const _RobotLogo(),
+                        const SizedBox(height: 24),
+                        // Title
+                        Text(
+                          _isRegister ? 'Sign Up' : 'Login',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
                           ),
-                          TextButton(
-                            onPressed: _isLoading
-                                ? null
-                                : () {
-                                    setState(() {
-                                      _isRegister = !_isRegister;
-                                    });
-                                  },
-                            child: Text(
-                              _isRegister ? 'Log in' : 'Sign up',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.95),
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _isRegister
+                              ? 'Create your AstroBot account'
+                              : 'Welcome to AstroBot AI Assistant',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Colors.white.withOpacity(0.9),
+                          ),
+                        ),
+                        const SizedBox(height: 40),
+                        // Email
+                        const Text(
+                          'Email',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _emailController,
+                          validator: (v) {
+                            if (v == null || v.isEmpty) return 'Email is required';
+                            if (!v.contains('@')) return 'Enter a valid email';
+                            return null;
+                          },
+                          keyboardType: TextInputType.emailAddress,
+                          style: const TextStyle(color: Colors.black87, fontSize: 15),
+                          decoration: InputDecoration(
+                            hintText: 'Enter your email address',
+                            hintStyle: TextStyle(color: Colors.grey.shade600),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 16,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey.shade300),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey.shade300),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                color: _accentBlue,
+                                width: 2,
                               ),
                             ),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 32),
-                      _buildTextField(
-                        controller: _emailController,
-                        hint: 'Email or username',
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Email is required';
-                          }
-                          if (!value.contains('@')) {
-                            return 'Enter a valid email';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 20),
-                      _buildTextField(
-                        controller: _passwordController,
-                        hint: 'Password',
-                        obscure: true,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Password is required';
-                          }
-                          if (value.length < 6) {
-                            return 'Password must be at least 6 characters';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      if (!_isRegister)
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            style: TextButton.styleFrom(
-                              foregroundColor: Colors.white70,
-                              padding: EdgeInsets.zero,
-                              minimumSize: const Size(0, 0),
-                            ),
-                            onPressed: _isLoading ? null : () {
-                              // TODO: Implement forgot-password flow if desired.
-                            },
-                            child: const Text(
-                              'Forgot password?',
-                              style: TextStyle(fontSize: 13),
-                            ),
-                          ),
                         ),
-                      if (_isRegister) const SizedBox(height: 12),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton(
-                          // Primary button to log in or create an account.
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white.withOpacity(0.9),
-                            foregroundColor: Colors.black87,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                          ),
-                          onPressed: _isLoading ? null : _submit,
-                          child: _isLoading
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : Text(
-                                  _isRegister ? 'Create account' : 'Login',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Center(
-                        child: TextButton(
-                          onPressed: _isLoading
-                              ? null
-                              : () {
-                                  // Development-only shortcut:
-                                  // Navigate directly to the dashboard without
-                                  // checking authentication, so you can build
-                                  // and preview the UI quickly.
-                                  Navigator.of(context).pushReplacement(
-                                    MaterialPageRoute(
-                                      builder: (_) => const DashboardPage(),
-                                    ),
-                                  );
-                                },
-                          child: Text(
-                            'Skip for now (preview dashboard)',
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Center(
-                        child: Text(
-                          'OR',
+                        const SizedBox(height: 20),
+                        // Password
+                        const Text(
+                          'Password',
                           style: TextStyle(
-                            color: Colors.white70,
-                            letterSpacing: 2,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white,
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _SocialCircle(
-                            color: const Color(0xFFDB4437),
-                            icon: Icons.g_mobiledata, // Placeholder icon
-                            onTap: () {
-                              // TODO: Implement Google sign-in via Supabase OAuth.
-                            },
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _passwordController,
+                          validator: (v) {
+                            if (v == null || v.isEmpty) return 'Password is required';
+                            if (v.length < 6) return 'At least 6 characters';
+                            return null;
+                          },
+                          obscureText: _obscurePassword,
+                          style: const TextStyle(color: Colors.black87, fontSize: 15),
+                          decoration: InputDecoration(
+                            hintText: 'Enter your password',
+                            hintStyle: TextStyle(color: Colors.grey.shade600),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 16,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey.shade300),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey.shade300),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                color: _accentBlue,
+                                width: 2,
+                              ),
+                            ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
+                                color: Colors.grey.shade600,
+                                size: 22,
+                              ),
+                              onPressed: () {
+                                setState(() => _obscurePassword = !_obscurePassword);
+                              },
+                            ),
                           ),
-                          const SizedBox(width: 16),
-                          _SocialCircle(
-                            color: const Color(0xFF1877F2),
-                            icon: Icons.facebook,
-                            onTap: () {
-                              // TODO: Implement Facebook sign-in if required.
-                            },
+                        ),
+                        const SizedBox(height: 12),
+                        // Forgot password (right-aligned when login)
+                        if (!_isRegister)
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: _isLoading
+                                  ? null
+                                  : () {
+                                      // TODO: forgot password
+                                    },
+                              child: const Text(
+                                'Forgot Password?',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
                           ),
-                          const SizedBox(width: 16),
-                          _SocialCircle(
-                            color: const Color(0xFF1DA1F2),
-                            icon: Icons.alternate_email,
-                            onTap: () {
-                              // TODO: Implement Twitter/X sign-in if required.
-                            },
+                        if (!_isRegister) const SizedBox(height: 8),
+                        const SizedBox(height: 24),
+                        // Login / Sign up button
+                        SizedBox(
+                          height: 52,
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _submit,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _accentBlue,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : Text(
+                                    _isRegister ? 'Create account' : 'Login',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                           ),
-                        ],
-                      ),
-                    ],
+                        ),
+                        const SizedBox(height: 32),
+                        // Don't have an account? Sign Up
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              _isRegister
+                                  ? 'Already have an account? '
+                                  : 'Don\'t have an account? ',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.9),
+                                fontSize: 14,
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: _isLoading
+                                  ? null
+                                  : () {
+                                      setState(() => _isRegister = !_isRegister);
+                                    },
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: Text(
+                                _isRegister ? 'Log in' : 'Sign Up',
+                                style: const TextStyle(
+                                  color: _accentBlue,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -315,32 +328,40 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-class _SocialCircle extends StatelessWidget {
-  const _SocialCircle({
-    required this.color,
-    required this.icon,
-    required this.onTap,
-  });
+/// App logo: AstroBot robot image (image2.jpeg).
+class _RobotLogo extends StatelessWidget {
+  const _RobotLogo();
 
-  final Color color;
-  final IconData icon;
-  final VoidCallback onTap;
+  static const Color _blue = Color(0xFF2196F3);
+  static const String _logoAsset = 'image/asset/image/image2.jpeg';
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(24),
-      child: CircleAvatar(
-        radius: 20,
-        backgroundColor: Colors.white,
-        child: CircleAvatar(
-          radius: 18,
-          backgroundColor: color,
-          child: Icon(
-            icon,
-            color: Colors.white,
-            size: 20,
+    return Center(
+      child: Container(
+        width: 100,
+        height: 100,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: _blue.withOpacity(0.5),
+              blurRadius: 24,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: ClipOval(
+          child: Image.asset(
+            _logoAsset,
+            fit: BoxFit.cover,
+            width: 100,
+            height: 100,
+            errorBuilder: (_, __, ___) => const Icon(
+              Icons.smart_toy,
+              size: 48,
+              color: Colors.white,
+            ),
           ),
         ),
       ),
@@ -348,38 +369,69 @@ class _SocialCircle extends StatelessWidget {
   }
 }
 
-Widget _buildTextField({
-  required TextEditingController controller,
-  required String hint,
-  bool obscure = false,
-  String? Function(String?)? validator,
-}) {
-  return TextFormField(
-    controller: controller,
-    validator: validator,
-    obscureText: obscure,
-    style: const TextStyle(color: Colors.white),
-    decoration: InputDecoration(
-      hintText: hint,
-      hintStyle: TextStyle(color: Colors.white.withOpacity(0.8)),
-      filled: true,
-      fillColor: Colors.white.withOpacity(0.18),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(24),
-        borderSide: BorderSide(
-          color: Colors.white.withOpacity(0.5),
-        ),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(24),
-        borderSide: const BorderSide(
-          color: Colors.white,
-          width: 1.2,
-        ),
-      ),
-    ),
-  );
+/// Paints circuit-board style lines and star-like dots on the background.
+class _CircuitBackgroundPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final blue = const Color(0xFF2196F3);
+    final blueDim = blue.withOpacity(0.15);
+    final blueGlow = blue.withOpacity(0.25);
+
+    // Glowing lines from bottom and sides
+    final linePaint = Paint()
+      ..color = blueDim
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+
+    final glowPaint = Paint()
+      ..color = blueGlow
+      ..strokeWidth = 4
+      ..style = PaintingStyle.stroke;
+
+    final rnd = math.Random(42);
+    for (int i = 0; i < 12; i++) {
+      final start = Offset(
+        rnd.nextDouble() * size.width,
+        size.height + 20,
+      );
+      final end = Offset(
+        rnd.nextDouble() * size.width,
+        rnd.nextDouble() * size.height * 0.6,
+      );
+      canvas.drawLine(start, end, glowPaint);
+      canvas.drawLine(start, end, linePaint);
+    }
+
+    for (int i = 0; i < 8; i++) {
+      final start = Offset(-10, rnd.nextDouble() * size.height);
+      final end = Offset(
+        rnd.nextDouble() * size.width * 0.5,
+        rnd.nextDouble() * size.height,
+      );
+      canvas.drawLine(start, end, glowPaint);
+      canvas.drawLine(start, end, linePaint);
+    }
+
+    for (int i = 0; i < 8; i++) {
+      final start = Offset(size.width + 10, rnd.nextDouble() * size.height);
+      final end = Offset(
+        size.width - rnd.nextDouble() * size.width * 0.5,
+        rnd.nextDouble() * size.height,
+      );
+      canvas.drawLine(start, end, glowPaint);
+      canvas.drawLine(start, end, linePaint);
+    }
+
+    // Star / data dots
+    final dotPaint = Paint()..color = Colors.white.withOpacity(0.4);
+    for (int i = 0; i < 80; i++) {
+      final x = rnd.nextDouble() * size.width;
+      final y = rnd.nextDouble() * size.height;
+      final radius = 1.0 + rnd.nextDouble() * 1.5;
+      canvas.drawCircle(Offset(x, y), radius, dotPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-
-

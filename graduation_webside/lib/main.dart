@@ -10,7 +10,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Supabase.initialize(
-    // Supabase project URL and public anonymous key for this app.
+    // Supabase project URL and public anonymous key for this webside .
     // These values must match the project you created in Supabase.
     url: 'https://utztollqwglvmtzfccwv.supabase.co',
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0enRvbGxxd2dsdm10emZjY3d2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0NTQyNjMsImV4cCI6MjA4NjAzMDI2M30.xquaCEsuwWyk18K-0lEzbRynyM983kIfeRzffM7GINk',
